@@ -1,19 +1,25 @@
 import Elysia, { t } from "elysia";
 import { prisma } from "../app/db";
 import { jwtConf } from "../config/jwt";
+import TodoService from "../service/todo-service";
 
 const todoGroup = new Elysia({ prefix: "/api/v1/todo" })
     .use(jwtConf())
-    .onBeforeHandle(async ({ jwt, cookie: { auth } }) => {
+    .state({ username: "" })
+    .onBeforeHandle(async ({ jwt, store, cookie: { auth } }) => {
         const userData = await jwt.verify(auth.value);
-        if (!userData) {
+        if (!userData)
             return new Response("you are not allowed", { status: 401 });
-        }
+
+        store.username = String(userData.username);
     })
     .post(
         "/",
-        async ({ body, set }) => {
-            const response = await prisma.todo.create({ data: body });
+        async ({ body, set, store }) => {
+            const idUser = await TodoService.getIdUser(store.username);
+            const response = await prisma.todo.create({
+                data: { id_user: idUser, activity: body.activity },
+            });
 
             set.status = 201;
             return {
@@ -24,19 +30,29 @@ const todoGroup = new Elysia({ prefix: "/api/v1/todo" })
         {
             body: t.Object({
                 activity: t.String(),
-                id_user: t.Number(),
             }),
         }
     )
-    .get("/", async () => {
-        const data = await prisma.todo.findMany();
+    .get("/", async ({ store }) => {
+        const idUser = await TodoService.getIdUser(store.username);
+        const data = await prisma.todo.findMany({ where: { id_user: idUser } });
         return data;
     })
     .delete(
         "/:id",
-        async ({ params }) => {
-            await prisma.todo.delete({
-                where: { id: params.id },
+        async ({ params, store }) => {
+            const idUser = await TodoService.getIdUser(store.username);
+
+            await prisma.$transaction(async (p) => {
+                const countTodo = await p.todo.count({
+                    where: { id: params.id, id_user: idUser },
+                });
+
+                if (countTodo === 0) return;
+
+                await p.todo.delete({
+                    where: { id: params.id, id_user: idUser },
+                });
             });
 
             return new Response("Berhasil menghapus todo", { status: 200 });
@@ -46,10 +62,19 @@ const todoGroup = new Elysia({ prefix: "/api/v1/todo" })
     )
     .patch(
         "/:id",
-        async ({ params, body }) => {
-            await prisma.todo.update({
-                where: { id: params.id },
-                data: body,
+        async ({ params, body, store }) => {
+            const idUser = await TodoService.getIdUser(store.username);
+            await prisma.$transaction(async (p) => {
+                const countTodo = await p.todo.count({
+                    where: { id: params.id, id_user: idUser },
+                });
+
+                if (countTodo === 0) return;
+
+                await prisma.todo.update({
+                    where: { id: params.id, id_user: idUser },
+                    data: body,
+                });
             });
 
             return "Berhasil mengubah todo";

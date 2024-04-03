@@ -7,7 +7,7 @@ type bodyType = {
 
 export default abstract class UserService {
     static async authenticate(body: bodyType): Promise<Response> {
-        const user = await prisma.user.findFirst({
+        const user = await prisma.user.findUnique({
             where: { username: body.username },
         });
 
