@@ -27,6 +27,7 @@ model Todo {
   id Int @id @default(autoincrement()) 
   id_user Int
   activity String
+  finished Boolean @default(false)
 
   user User @relation(fields: [id_user], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }

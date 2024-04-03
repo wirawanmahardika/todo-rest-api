@@ -31,6 +31,38 @@ const todoGroup = new Elysia({ prefix: "/api/v1/todo" })
     .get("/", async () => {
         const data = await prisma.todo.findMany();
         return data;
-    });
+    })
+    .delete(
+        "/:id",
+        async ({ params }) => {
+            await prisma.todo.delete({
+                where: { id: params.id },
+            });
+
+            return new Response("Berhasil menghapus todo", { status: 200 });
+        },
+
+        { params: t.Object({ id: t.Numeric() }) }
+    )
+    .patch(
+        "/:id",
+        async ({ params, body }) => {
+            await prisma.todo.update({
+                where: { id: params.id },
+                data: body,
+            });
+
+            return "Berhasil mengubah todo";
+        },
+        {
+            body: t.Object({
+                activity: t.String(),
+                finished: t.Boolean(),
+            }),
+            params: t.Object({
+                id: t.Numeric(),
+            }),
+        }
+    );
 
 export default todoGroup;
