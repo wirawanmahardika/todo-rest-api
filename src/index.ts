@@ -1,5 +1,4 @@
 import { Elysia, t } from "elysia";
-import staticPlugin from "@elysiajs/static";
 import userGroup from "./group/user-group";
 import todoGroup from "./group/todo-group";
 import corsConf from "./config/cors";
@@ -10,7 +9,6 @@ const app = new Elysia({
     cookie: cookieConf(),
 })
     .use(swagger())
-    .use(staticPlugin({ prefix: "/" }))
     .use(corsConf())
     .use(userGroup)
     .use(todoGroup)

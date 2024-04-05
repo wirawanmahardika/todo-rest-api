@@ -5,7 +5,8 @@ const corsConf = () => {
         credentials: true,
         maxAge: 3600 * 24,
         methods: ["GET", "POST", "PATCH", "DELETE"],
-        origin: ["http://localhost:5500", "http://localhost:3000"],
+        origin: true,
+        allowedHeaders: ["Content-Type"],
     });
 };
 export default corsConf;

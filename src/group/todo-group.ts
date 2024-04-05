@@ -73,7 +73,10 @@ const todoGroup = new Elysia({ prefix: "/api/v1/todo" })
 
                 await prisma.todo.update({
                     where: { id: params.id, id_user: idUser },
-                    data: body,
+                    data: {
+                        activity: body.activity,
+                        finished: body.finished,
+                    },
                 });
             });
 
@@ -81,8 +84,8 @@ const todoGroup = new Elysia({ prefix: "/api/v1/todo" })
         },
         {
             body: t.Object({
-                activity: t.String(),
-                finished: t.Boolean(),
+                activity: t.Optional(t.String()),
+                finished: t.Optional(t.Boolean()),
             }),
             params: t.Object({
                 id: t.Numeric(),
